@@ -14,10 +14,8 @@ const releaseNotes: Command = {
   async call(args) {
     const currentVersion = MACRO.VERSION
 
-    // If a specific version is requested, show that version's notes
     const requestedVersion = args ? args.trim() : currentVersion
 
-    // Get the requested version's notes
     const notes = RELEASE_NOTES[requestedVersion]
 
     if (!notes || notes.length === 0) {

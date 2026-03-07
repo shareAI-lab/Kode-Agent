@@ -105,7 +105,7 @@ async function publishRelease() {
 
     // 8. 运行预发布检查
     console.log('🔍 Running pre-publish checks...');
-    execSync('node scripts/prepublish-check.js', { stdio: 'inherit' });
+    execSync('bun run scripts/prepublish-check.js', { stdio: 'inherit' });
 
     // 9. 发布到 npm
     console.log('📤 Publishing to npm...');

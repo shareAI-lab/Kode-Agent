@@ -1,12 +1,11 @@
 import { Command } from '@commands'
 import { getContext } from '@context'
 import { getMessagesGetter, getMessagesSetter } from '@messages'
-import { API_ERROR_MESSAGE_PREFIX, queryLLM } from '@services/claude'
-import {
-  createUserMessage,
-  normalizeMessagesForAPI,
-} from '@utils/messages'
-import { getCodeStyle } from '@utils/style'
+import { API_ERROR_MESSAGE_PREFIX } from '@services/llmConstants'
+import { queryLLM } from '@services/llmLazy'
+import { getGlobalConfig } from '@utils/config'
+import { createUserMessage, normalizeMessagesForAPI } from '@utils/messages'
+import { getCodeStyle } from '@utils/config/style'
 import { clearTerminal } from '@utils/terminal'
 import { resetReminderSession } from '@services/systemReminder'
 import { resetFileFreshnessSession } from '@services/fileFreshness'
@@ -56,6 +55,7 @@ const compact = {
     const messages = getMessagesGetter()()
 
     const summaryRequest = createUserMessage(COMPRESSION_PROMPT)
+    const compactPointer = getGlobalConfig().modelPointers?.compact
 
     const summaryResponse = await queryLLM(
       normalizeMessagesForAPI([...messages, summaryRequest]),
@@ -67,7 +67,7 @@ const compact = {
       abortController.signal,
       {
         safeMode: false,
-        model: 'main', // 使用模型指针，让queryLLM统一解析
+        model: compactPointer ? 'compact' : 'main',
         prependCLISysprompt: true,
       },
     )
@@ -107,10 +107,9 @@ const compact = {
     getCodeStyle.cache.clear?.()
     resetFileFreshnessSession()
 
-    // Reset reminder and file freshness sessions to clean up state
     resetReminderSession()
 
-    return '' // not used, just for typesafety. TODO: avoid this hack
+    return ''
   },
   userFacingName() {
     return 'compact'

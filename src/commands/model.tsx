@@ -25,13 +25,9 @@ export async function call(
   return (
     <ModelConfig
       onClose={() => {
-        // Force ModelManager reload to ensure UI sync - wait for completion before closing
         import('@utils/model').then(({ reloadModelManager }) => {
           reloadModelManager()
-          // 🔧 Critical fix: Trigger global UI refresh after model config changes
-          // This ensures PromptInput component detects ModelManager singleton state changes
           triggerModelConfigChange()
-          // Only close after reload is complete to ensure UI synchronization
           onDone()
         })
       }}

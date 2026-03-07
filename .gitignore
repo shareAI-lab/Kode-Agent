@@ -101,91 +101,29 @@ web_modules/
 
 # dotenv environment variable files
 
-.env
-.env.development.local
-.env.test.local
-.env.production.local
-.env.local
-
-# parcel-bundler cache (https://parceljs.org/)
-
-.parcel-cache
-
-# Next.js build output
-
-.next
-out
-
-# Nuxt.js build / generate output
-
-.nuxt
-dist
-
-# Gatsby files
-
-# Comment in the public line in if your project uses Gatsby and not Next.js
-
-# https://nextjs.org/blog/next-9-1#public-directory-support
-
-# public
-
-# vuepress build output
-
-.vuepress/dist
-
-# vuepress v2.x temp and cache directory
-
-.temp
-
-# Docusaurus cache and generated files
-
-.docusaurus
-
-# Serverless directories
-
-.serverless/
-
-# FuseBox cache
-
-.fusebox/
-
-# DynamoDB Local files
-
-.dynamodb/
-
-# TernJS port file
-
-.tern-port
-
-# Stores VSCode versions used for testing VSCode extensions
-
-.vscode-test
-
-# yarn v2
-
-.yarn/cache
-.yarn/unplugged
-.yarn/build-state.yml
-.yarn/install-state.gz
-.pnp.*
-
-# IntelliJ based IDEs
-.idea
-
-# Finder (MacOS) folder config
 .DS_Store
-# Build artifacts
-cli.js
-.npmrc
+.env
+.env.*.local
 
-# Lock files
-bun.lock
-bun.lockb
-package-lock.json
-yarn.lock
-pnpm-lock.yaml
+node_modules/
+dist/
+coverage/
 
-# Old build artifacts
-cli.mjs
-cli.mjs.map
-source-maps/
+.tmp/
+.tmp-*/
+.tmp-kode-config/
+
+*.log
+
+# Local task files
+todo_tasks.json
+todo_tasks_detail.md
+
+# Private config
+CLAUDE.md
+.claude/
+.kode/
+
+# Test files
+main.js
+

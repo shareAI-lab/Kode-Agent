@@ -18,6 +18,8 @@ jobs:
     runs-on: ubuntu-latest
     permissions:
       contents: write
+    env:
+      KODE_SKIP_BINARY_DOWNLOAD: "1"
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -28,7 +30,7 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: '18'
+          node-version: '20.18.1'
           registry-url: 'https://registry.npmjs.org'
 
       - name: Setup Bun
@@ -36,18 +38,13 @@ jobs:
         with:
           bun-version: latest
 
-      - name: Setup pnpm
-        uses: pnpm/action-setup@v2
-        with:
-          version: latest
-
       - name: Configure Git
         run: |
           git config --local user.email "github-actions[bot]@users.noreply.github.com"
           git config --local user.name "github-actions[bot]"
 
       - name: Install dependencies
-        run: pnpm install
+        run: bun install
 
       - name: Bump version
         id: bump_version
@@ -64,16 +61,12 @@ jobs:
           echo "New version: $NEW_VERSION"
           echo "new_version=$NEW_VERSION" >> $GITHUB_OUTPUT
 
-      - name: Build
-        run: bun run build
-
-      - name: Commit changes and publish
+      - name: Commit changes and tag
         run: |
           git add package.json
           git commit -m "Release v${{ steps.bump_version.outputs.new_version }}"
           git tag -a v${{ steps.bump_version.outputs.new_version }} -m "Release v${{ steps.bump_version.outputs.new_version }}"
           git push origin HEAD:main
           git push origin --tags
-          pnpm publish --no-git-checks
-        env:
-          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }} 
+          echo "✅ Tag pushed: v${{ steps.bump_version.outputs.new_version }}"
+          echo "ℹ️  Stable release workflow will publish npm + binaries from the tag."

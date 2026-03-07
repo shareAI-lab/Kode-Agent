@@ -1,7 +1,7 @@
 import { Command } from '@commands'
 import { getMessagesSetter } from '@messages'
 import { getContext } from '@context'
-import { getCodeStyle } from '@utils/style'
+import { getCodeStyle } from '@utils/config/style'
 import { clearTerminal } from '@utils/terminal'
 import { getOriginalCwd, setCwd } from '@utils/state'
 import { Message } from '@query'
@@ -20,7 +20,6 @@ export async function clearConversation(context: {
   getCodeStyle.cache.clear?.()
   await setCwd(getOriginalCwd())
 
-  // Reset reminder and file freshness sessions to clean up state
   resetReminderSession()
   resetFileFreshnessSession()
 }

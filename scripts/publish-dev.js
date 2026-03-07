@@ -51,7 +51,7 @@ async function publishDev() {
 
     // 5. 运行预发布检查
     console.log('🔍 Running pre-publish checks...');
-    execSync('node scripts/prepublish-check.js', { stdio: 'inherit' });
+    execSync('bun run scripts/prepublish-check.js', { stdio: 'inherit' });
 
     // 6. 发布到 npm 的 dev tag
     console.log('📤 Publishing to npm...');

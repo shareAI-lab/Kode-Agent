@@ -2,7 +2,7 @@ import * as React from 'react'
 import type { Command } from '@commands'
 import { ResumeConversation } from '@screens/ResumeConversation'
 import { render } from 'ink'
-import { CACHE_PATHS, loadLogList } from '@utils/log'
+import { listKodeAgentSessions } from '@utils/protocol/kodeAgentSessionResume'
 
 export default {
   type: 'local-jsx',
@@ -15,17 +15,22 @@ export default {
   },
   async call(onDone, context) {
     const { commands = [], tools = [], verbose = false } = context.options || {}
-    const logs = await loadLogList(CACHE_PATHS.messages())
+    const cwd = process.cwd()
+    const sessions = listKodeAgentSessions({ cwd })
+    if (sessions.length === 0) {
+      onDone('No conversation found to resume')
+      return null
+    }
     render(
       <ResumeConversation
+        cwd={cwd}
         commands={commands}
         context={{ unmount: onDone }}
-        logs={logs}
+        sessions={sessions}
         tools={tools}
         verbose={verbose}
       />,
     )
-    // This return is here for type only
     return null
   },
 } satisfies Command

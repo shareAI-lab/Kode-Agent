@@ -1,6 +1,6 @@
 import { Command } from '@commands'
 import { logError } from '@utils/log'
-import { execFileNoThrow } from '@utils/execFileNoThrow'
+import { execFileNoThrow } from '@utils/system/execFileNoThrow'
 
 const isEnabled =
   process.platform === 'darwin' &&
@@ -16,7 +16,6 @@ const listen: Command = {
     return 'listen'
   },
   async call(_, { abortController }) {
-    // Start dictation using AppleScript
     const script = `tell application "System Events" to tell ¬
 (the first process whose frontmost is true) to tell ¬
 menu bar 1 to tell ¬

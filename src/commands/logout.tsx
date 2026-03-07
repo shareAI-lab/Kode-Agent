@@ -7,7 +7,7 @@ import { Text } from 'ink'
 export default {
   type: 'local-jsx',
   name: 'logout',
-  description: 'Sign out from your Anthropic account',
+  description: 'Sign out from your ShareAI Lab account',
   isEnabled: true,
   isHidden: false,
   async call() {
@@ -25,7 +25,7 @@ export default {
     saveGlobalConfig(config)
 
     const message = (
-      <Text>Successfully logged out from your Anthropic account.</Text>
+      <Text>Successfully logged out from your ShareAI Lab account.</Text>
     )
 
     setTimeout(() => {

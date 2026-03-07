@@ -21,6 +21,8 @@
 
 **2025-08-29**：我们添加了 Windows 电脑的运行支持！所有的 Windows 用户现在可以使用你电脑上的 Git Bash、Unix 子系统或 WSL（Windows Subsystem for Linux）来运行 Kode。
 
+**2025-12-30**：Windows 现在开箱即用，原生支持 cmd.exe。Git Bash 和 WSL 是可选的，但推荐使用以获得更好的体验。
+
 Kode 是一个强大的 AI 助手，运行在你的终端中。它能理解你的代码库、编辑文件、运行命令，并为你处理整个开发工作流。
 
 > **⚠️ 安全提示**：Kode 默认以 YOLO 模式运行（等同于 Claude Code 的 `--dangerously-skip-permissions` 标志），跳过所有权限检查以获得最大生产力。YOLO 模式仅建议在安全可信的环境中处理非重要项目时使用。如果您正在处理重要文件或使用能力存疑的模型，我们强烈建议使用 `kode --safe` 启用权限检查和手动审批所有操作。
@@ -56,13 +58,14 @@ npm install -g @shareai-lab/kode
 
 ### Windows 提示
 
-- 请安装 Git for Windows（包含 Git Bash 类 Unix 终端）：https://git-scm.com/download/win
-  - Kode 会优先使用 Git Bash/MSYS 或 WSL Bash；没有时会回退到默认终端，但在 Bash 下体验更佳。
-- 推荐在 VS Code 的集成终端中运行（而非系统默认的 cmd）：
+- **Git Bash 是可选的**：Kode 现在原生支持 Windows cmd.exe 和 PowerShell。
+  - 如果安装了 Git Bash/MSYS 或 WSL Bash，Kode 会优先使用它们以获得更好的 Unix 兼容性。
+  - 如果都没有安装，Kode 使用 cmd.exe，同样可以正常工作。
+- 推荐使用 VS Code 集成终端以获得最佳体验：
   - 字体与图标显示更稳定，UI 体验更好。
-  - 相比 cmd 路径/编码等兼容性问题更少。
-  - 在 VS Code 终端中选择 “Git Bash” 作为默认 Shell。
-- 可选：若通过 npm 全局安装，建议避免将 npm 全局 prefix 设置在含空格的路径，以免生成的可执行 shim 出现路径解析问题。
+  - 相比传统命令提示符，路径和编码问题更少。
+- 可选：安装 Git for Windows 以获得增强的类 Unix 功能：https://git-scm.com/download/win
+- 若通过 npm 全局安装，建议避免将 npm 全局 prefix 设置在含空格的路径，以免生成的可执行 shim 出现路径解析问题。
   - 示例：`npm config set prefix "C:\\npm"`，然后重新安装全局包。
 
 ## 使用方法
@@ -138,6 +141,14 @@ Kode 同时使用 `~/.kode` 目录（存放额外数据，如内存文件）和 
 - `/config` - 打开配置面板
 - `/cost` - 显示 token 使用量和成本
 - `/clear` - 清除对话历史
+- `/compact-threshold` - 查看或设置自动压缩阈值比例（如 `/compact-threshold 0.85` 或 `/compact-threshold 85%`）
+
+  | 值 | 效果 | 适用场景 |
+  |----|------|----------|
+  | 0.80 | 更早压缩，更保守 | 小上下文模型（如 deepseek 131k） |
+  | 0.85 | 平衡 | 中等上下文模型 |
+  | 0.90 | 默认 | 大上下文模型（如 Claude 200k） |
+
 - `/init` - 初始化项目上下文
 
 ## 多模型智能协同

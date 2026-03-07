@@ -12,7 +12,6 @@ const command = {
     return 'init'
   },
   async getPromptForCommand(_args: string) {
-    // Mark onboarding as complete when init command is run
     markProjectOnboardingComplete()
     return [
       {

@@ -4,7 +4,7 @@
 [![License](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](https://opensource.org/licenses/Apache-2.0)
 [![AGENTS.md](https://img.shields.io/badge/AGENTS.md-Compatible-brightgreen)](https://agents.md)
 
-[中文文档](README.zh-CN.md) | [Contributing](CONTRIBUTING.md) | [Documentation](docs/)
+[中文文档](README.zh-CN.md) | [Contributing](CONTRIBUTING.md) | [Documentation](docs/README.md)
 
 <img width="90%" alt="image" src="https://github.com/user-attachments/assets/fdce7017-8095-429d-b74e-07f43a6919e1" />
 
@@ -18,29 +18,45 @@
 
 ## 📢 Update Log
 
-**2025-08-29**: We've added Windows support! All Windows users can now run Kode using Git Bash, Unix subsystems, or WSL (Windows Subsystem for Linux) on their computers.
+**2025-12-22**: Native-first distribution (Windows OOTB). Kode prefers a cached native binary and falls back to the Node.js runtime when needed. See `docs/binary-distribution.md`.
 
 
 ## 🤝 AGENTS.md Standard Support
 
-**Kode proudly supports the [AGENTS.md standard protocol](https://agents.md) initiated by OpenAI** - a simple, open format for guiding programming agents that's used by 20k+ open source projects.
+Kode supports the [AGENTS.md standard](https://agents.md): a simple, open format for guiding coding agents, used by 60k+ open-source projects.
 
 ### Full Compatibility with Multiple Standards
 
 - ✅ **AGENTS.md** - Native support for the OpenAI-initiated standard format
-- ✅ **CLAUDE.md** - Full backward compatibility with Claude Code `.claude` configurations  
+- ✅ **Legacy `.claude` compatibility** - Reads `.claude` directories and `CLAUDE.md` when present (see `docs/compatibility.md`)
 - ✅ **Subagent System** - Advanced agent delegation and task orchestration
 - ✅ **Cross-platform** - Works with 20+ AI models and providers
 
 Use `# Your documentation request` to generate and maintain your AGENTS.md file automatically, while preserving compatibility with existing `.claude` workflows.
 
+### Instruction Discovery (Codex-compatible)
+
+- Kode reads project instructions by walking from the Git repo root → current working directory.
+- In each directory, it prefers `AGENTS.override.md` over `AGENTS.md` (at most one file per directory).
+- Discovered files are concatenated root → leaf (combined size capped at 32 KiB by default; override with `KODE_PROJECT_DOC_MAX_BYTES`).
+- If `CLAUDE.md` exists in the current directory, Kode also reads it as a legacy instruction file.
+
 ## Overview
 
 Kode is a powerful AI assistant that lives in your terminal. It can understand your codebase, edit files, run commands, and handle entire workflows for you.
 
-> **⚠️ Security Notice**: Kode runs in YOLO mode by default (equivalent to Claude Code's `--dangerously-skip-permissions` flag), bypassing all permission checks for maximum productivity. YOLO mode is recommended only for trusted, secure environments when working on non-critical projects. If you're working with important files or using models of questionable capability, we strongly recommend using `kode --safe` to enable permission checks and manual approval for all operations.
+> **⚠️ Security Notice**: Kode runs in YOLO mode by default (equivalent to the `--dangerously-skip-permissions` flag), bypassing all permission checks for maximum productivity. YOLO mode is recommended only for trusted, secure environments when working on non-critical projects. If you're working with important files or using models of questionable capability, we strongly recommend using `kode --safe` to enable permission checks and manual approval for all operations.
 > 
 > **📊 Model Performance**: For optimal performance, we recommend using newer, more capable models designed for autonomous task completion. Avoid older Q&A-focused models like GPT-4o or Gemini 2.5 Pro, which are optimized for answering questions rather than sustained independent task execution. Choose models specifically trained for agentic workflows and extended reasoning capabilities.
+
+## Network & Privacy
+
+- Kode does not send product telemetry/analytics by default.
+- Network requests happen only when you explicitly use networked features:
+  - Model provider requests (Anthropic/OpenAI-compatible endpoints you configure)
+  - Web tools (`WebFetch`, `WebSearch`)
+  - Plugin marketplace downloads (GitHub/URL sources) and OAuth flows (when used)
+  - Optional update checks (opt-in via `autoUpdaterStatus: enabled`)
 
 <img width="600" height="577" alt="image" src="https://github.com/user-attachments/assets/8b46a39d-1ab6-4669-9391-14ccc6c5234c" />
 
@@ -57,8 +73,8 @@ Kode is a powerful AI assistant that lives in your terminal. It can understand y
 - 🛠️ **Workflow Automation** - Handle complex development tasks with simple prompts
 
 ### Authoring Comfort
-- `Ctrl+G` opens your message in your preferred editor (respects `$EDITOR`/`$VISUAL`; falls back to code/nano/vim/notepad) and returns the text to the prompt when you close it.
-- `Shift+Enter` inserts a newline inside the prompt without sending; plain Enter submits. `Ctrl+M` switches the active model.
+- `Option+G` (Alt+G) opens your message in your preferred editor (respects `$EDITOR`/`$VISUAL`; falls back to code/nano/vim/notepad) and returns the text to the prompt when you close it.
+- `Option+Enter` inserts a newline inside the prompt without sending; plain Enter submits. `Option+M` cycles the active model.
 
 ### 🎯 Advanced Intelligent Completion System
 Our state-of-the-art completion system provides unparalleled coding assistance:
@@ -93,22 +109,40 @@ Our state-of-the-art completion system provides unparalleled coding assistance:
 npm install -g @shareai-lab/kode
 ```
 
+> **🇨🇳 For users in China**: If you encounter network issues, use a mirror registry:
+> ```bash
+> npm install -g @shareai-lab/kode --registry=https://registry.npmmirror.com
+> ```
+
+Dev channel (latest features):
+
+```bash
+npm install -g @shareai-lab/kode@dev
+```
+
 After installation, you can use any of these commands:
 - `kode` - Primary command
 - `kwa` - Kode With Agent (alternative)
 - `kd` - Ultra-short alias
 
-### Windows Notes
+### Native binaries (Windows OOTB)
 
-- Install Git for Windows to provide a Bash (Unix‑like) environment: https://git-scm.com/download/win
-  - Kode automatically prefers Git Bash/MSYS or WSL Bash when available.
-  - If neither is available, it will fall back to your default shell, but many features work best with Bash.
-- Use VS Code’s integrated terminal rather than legacy Command Prompt (cmd):
-  - Better font rendering and icon support.
-  - Fewer path and encoding quirks compared to cmd.
-  - Select “Git Bash” as the VS Code terminal shell when possible.
-- Optional: If you install globally via npm, avoid spaces in the global prefix path to prevent shim issues.
-  - Example: `npm config set prefix "C:\\npm"` and reinstall global packages.
+- No WSL/Git Bash required.
+- On `postinstall`, Kode will best-effort download a native binary from GitHub Releases into `${KODE_BIN_DIR:-~/.kode/bin}/<version>/<platform>-<arch>/kode(.exe)`.
+- The wrapper (`cli.js`) prefers the native binary and falls back to the Node.js runtime (`node dist/index.js`) when needed.
+
+Overrides:
+- Mirror downloads: `KODE_BINARY_BASE_URL`
+- Disable download: `KODE_SKIP_BINARY_DOWNLOAD=1`
+- Cache directory: `KODE_BIN_DIR`
+
+See `docs/binary-distribution.md`.
+
+### Configuration / API keys
+
+- Global config (models, pointers, theme, etc): `~/.kode.json` (or `<KODE_CONFIG_DIR>/config.json` when `KODE_CONFIG_DIR`/`CLAUDE_CONFIG_DIR` is set).
+- Project/local settings (output style, etc): `./.kode/settings.json` and `./.kode/settings.local.json` (legacy `.claude` is supported for some features).
+- Configure models via `/model` (UI) or `kode models import/export` (YAML). Details: `docs/develop/configuration.md`.
 
 ## Usage
 
@@ -129,6 +163,24 @@ kode -p "explain this function" path/to/file.js
 # or
 kwa -p "explain this function" path/to/file.js
 ```
+
+### ACP (Agent Client Protocol)
+
+Run Kode as an ACP agent server (stdio JSON-RPC), for clients like Toad/Zed:
+
+```bash
+kode-acp
+# or
+kode --acp
+```
+
+Toad example:
+
+```bash
+toad acp "kode-acp"
+```
+
+More: `docs/acp.md`.
 
 ### Using the @ Mention System
 
@@ -153,12 +205,60 @@ Kode supports a powerful @ mention system for intelligent completions:
 #### 📁 Smart File References
 ```bash
 # Reference files and directories with auto-completion
-@src/components/Button.tsx
-@docs/api-reference.md
+@packages/core/src/query/index.ts
+@docs/README.md
 @.env.example
 ```
 
 The @ mention system provides intelligent completions as you type, showing available models, agents, and files.
+
+### MCP Servers (Extensions)
+
+Kode can connect to MCP servers to extend tools and context.
+
+- Config files: `.mcp.json` (recommended) or `.mcprc` in your project root. See `docs/mcp.md`.
+- CLI:
+
+```bash
+kode mcp add
+kode mcp list
+kode mcp get <name>
+kode mcp remove <name>
+```
+
+Example `.mcprc`:
+
+```json
+{
+  "my-sse-server": { "type": "sse", "url": "http://127.0.0.1:3333/sse" }
+}
+```
+
+### Permissions & Approvals
+
+- Default mode skips most prompts for speed.
+- Safe mode: `kode --safe` requires approval for Bash commands and file writes/edits.
+- Plan mode: the assistant may ask to enter plan mode to draft a plan file; while in plan mode, only read-only/planning tools (and the plan file) are allowed until you approve exiting plan mode.
+
+### Paste & Images
+
+- Multi-line/large paste is inserted as a placeholder and expanded on submit.
+- Pasting multiple existing file paths inserts `@path` mentions automatically (quoted when needed).
+- Image paste (macOS): press `Ctrl+V` to attach clipboard images; you can paste multiple images before sending.
+
+### System Sandbox (Linux)
+
+- In safe mode (or with `KODE_SYSTEM_SANDBOX=1`), agent-triggered Bash tool calls try to run inside a `bwrap` sandbox when available.
+- Network is disabled by default; set `KODE_SYSTEM_SANDBOX_NETWORK=inherit` to allow network.
+- Set `KODE_SYSTEM_SANDBOX=required` to fail closed if sandbox cannot be started.
+- See `docs/system-sandbox.md` for details and platform notes.
+
+### Troubleshooting
+
+- Models: use `/model`, or `kode models import kode-models.yaml`, and ensure required API key env vars exist.
+- Windows: if the native binary download is blocked/offline, set `KODE_BINARY_BASE_URL` (mirror) or `KODE_SKIP_BINARY_DOWNLOAD=1` (skip download); the wrapper will fall back to the Node.js runtime (`dist/index.js`).
+- MCP: use `kode mcp list` to check server status; tune `MCP_CONNECTION_TIMEOUT_MS`, `MCP_SERVER_CONNECTION_BATCH_SIZE`, and `MCP_TOOL_TIMEOUT` if servers are slow.
+- Sandbox: install `bwrap` (bubblewrap) on Linux, or set `KODE_SYSTEM_SANDBOX=0` to disable.
 
 ### AGENTS.md Documentation Mode
 
@@ -227,13 +327,145 @@ As long as you have an openai-like endpoint, it should work.
 - `/help` - Show available commands
 - `/model` - Change AI model settings
 - `/config` - Open configuration panel
+- `/agents` - Manage subagents
+- `/output-style` - Set the output style
+- `/statusline` - Configure a custom status line command
 - `/cost` - Show token usage and costs
 - `/clear` - Clear conversation history
 - `/init` - Initialize project context
+- `/plugin` - Manage plugins/marketplaces (skills, commands)
+
+## Agents / Subagents
+
+Kode supports subagents (agent templates) for delegation and task orchestration.
+
+- Agents are loaded from `.kode/agents` and `.claude/agents` (user + project), plus plugins/policy and `--agents`.
+- Manage in the UI: `/agents` (creates new agents under `./.claude/agents` / `~/.claude/agents` by default).
+- Run via mentions: `@run-agent-<agentType> ...`
+- Run via tooling: `Task(subagent_type: "<agentType>", ...)`
+- CLI flags: `--agents <json>` (inject agents for this run), `--setting-sources user,project,local` (control which sources are loaded)
+
+Minimal agent file example (`./.kode/agents/reviewer.md`):
+
+```md
+---
+name: reviewer
+description: "Review diffs for correctness, security, and simplicity"
+tools: ["Read", "Grep"]
+model: inherit
+---
+
+Be strict. Point out bugs and risky changes. Prefer small, targeted fixes.
+```
+
+Model field notes:
+- Compatibility aliases: `inherit`, `opus`, `sonnet`, `haiku` (mapped to model pointers)
+- Kode selectors (via `/model`): pointers (`main|task|compact|quick`), profile name, modelName, or `provider:modelName` (e.g. `openai:o3`)
+
+Validate agent templates:
+
+```bash
+kode agents validate
+```
+
+See `docs/agents-system.md`.
+
+## Skills & Plugins
+
+Kode supports the [Agent Skills](https://agentskills.io) open format for extending agent capabilities:
+- **Agent Skills** format (`SKILL.md`) - see [specification](https://agentskills.io/specification)
+- **Marketplace compatibility** (`.kode-plugin/marketplace.json`, legacy `.claude-plugin/marketplace.json`)
+- **Install from any repository** using [`add-skill` CLI](https://github.com/vercel-labs/add-skill)
+
+### Quick install with add-skill
+
+Install skills from any git repository:
+
+```bash
+# Install from GitHub
+npx add-skill vercel-labs/agent-skills -a kode
+
+# Install to global directory
+npx add-skill vercel-labs/agent-skills -a kode -g
+
+# Install specific skills
+npx add-skill vercel-labs/agent-skills -a kode -s pdf -s xlsx
+```
+
+### Install skills from a marketplace
+
+```bash
+# Add a marketplace (local path, GitHub owner/repo, or URL)
+kode plugin marketplace add ./path/to/marketplace-repo
+kode plugin marketplace add owner/repo
+kode plugin marketplace list
+
+# Install a plugin pack (installs skills/commands)
+kode plugin install document-skills@anthropic-agent-skills --scope user
+
+# Project-scoped install (writes to ./.kode/...)
+kode plugin install document-skills@anthropic-agent-skills --scope project
+
+# Disable/enable an installed plugin
+kode plugin disable document-skills@anthropic-agent-skills --scope user
+kode plugin enable document-skills@anthropic-agent-skills --scope user
+```
+
+Interactive equivalents:
+
+```text
+/plugin marketplace add owner/repo
+/plugin install document-skills@anthropic-agent-skills --scope user
+```
+
+### Use skills
+
+- In interactive mode, run a skill as a slash command: `/pdf`, `/xlsx`, etc.
+- Kode can also invoke skills automatically via the `Skill` tool when relevant.
+
+### Create a skill (Agent Skills)
+
+Create `./.kode/skills/<skill-name>/SKILL.md` (project) or `~/.kode/skills/<skill-name>/SKILL.md` (user):
+
+```md
+---
+name: my-skill
+description: Describe what this skill does and when to use it.
+allowed-tools: Read Bash(git:*) Bash(jq:*)
+---
+
+# Skill instructions
+```
+
+Naming rules:
+- `name` must match the folder name
+- Lowercase letters/numbers/hyphens only, 1–64 chars
+
+Compatibility:
+- Kode also discovers `.claude/skills` and `.claude/commands` for legacy compatibility.
+
+### Distribute skills
+
+- Marketplace repo: publish a repo containing `.kode-plugin/marketplace.json` listing plugin packs and their `skills` directories (legacy `.claude-plugin/marketplace.json` is also supported).
+- Plugin repo: for full plugins (beyond skills), include `.kode-plugin/plugin.json` at the plugin root and keep all paths relative (`./...`).
+
+See `docs/skills.md` for a compact reference and examples.
+
+### Output styles
+
+Use output styles to switch system-prompt behavior.
+
+- Select: `/output-style` (menu) or `/output-style <style>`
+- Built-ins: `default`, `Explanatory`, `Learning`
+- Stored per-project in `./.kode/settings.local.json` as `outputStyle` (legacy `.claude/settings.local.json` is supported)
+- Custom styles: Markdown files under `output-styles/` in `.claude`/`.kode` user + project locations
+- Plugins can provide styles under `output-styles/` (or manifest `outputStyles`); plugin styles are namespaced as `<plugin>:<style>`
+
+See `docs/output-styles.md`.
 
 ## Multi-Model Intelligent Collaboration
 
-Unlike official Claude which supports only a single model, Kode implements **true multi-model collaboration**, allowing you to fully leverage the unique strengths of different AI models.
+Unlike single-model CLIs, Kode implements **true multi-model collaboration**, allowing you to fully leverage the unique strengths of different AI models.
 
 ### 🏗️ Core Technical Architecture
 
@@ -243,9 +475,46 @@ We designed a unified `ModelManager` system that supports:
 - **Model Pointers**: Users can configure default models for different purposes in the `/model` command:
   - `main`: Default model for main Agent
   - `task`: Default model for SubAgent
-  - `reasoning`: Reserved for future ThinkTool usage
-  - `quick`: Fast model for simple NLP tasks (security identification, title generation, etc.)
+  - `compact`: Model used for automatic context compression when nearing the context window
+  - `quick`: Fast model for simple operations and utilities
 - **Dynamic Model Switching**: Support runtime model switching without restarting sessions, maintaining context continuity
+
+#### 📦 Shareable Model Config (YAML)
+
+You can export/import model profiles + pointers as a team-shareable YAML file. By default, exports do **not** include plaintext API keys (use env vars instead).
+
+```bash
+# Export to a file (or omit --output to print to stdout)
+kode models export --output kode-models.yaml
+
+# Import (merge by default)
+kode models import kode-models.yaml
+
+# Replace existing profiles instead of merging
+kode models import --replace kode-models.yaml
+
+# List configured profiles + pointers
+kode models list
+```
+
+Example `kode-models.yaml`:
+
+```yaml
+version: 1
+profiles:
+  - name: OpenAI Main
+    provider: openai
+    modelName: gpt-4o
+    maxTokens: 8192
+    contextLength: 128000
+    apiKey:
+      fromEnv: OPENAI_API_KEY
+pointers:
+  main: gpt-4o
+  task: gpt-4o
+  compact: gpt-4o
+  quick: gpt-4o
+```
 
 #### 2. **TaskTool Intelligent Task Distribution**
 Our specially designed `TaskTool` (Architect tool) implements:
@@ -260,7 +529,7 @@ We specially designed the `AskExpertModel` tool:
 - **Knowledge Integration**: Integrates expert model insights into the current task
 
 #### 🎯 Flexible Model Switching
-- **Tab Key Quick Switch**: Press Tab in the input box to quickly switch the model for the current conversation
+- **Option+M Quick Switch**: Press Option+M in the input box to cycle the main conversation model
 - **`/model` Command**: Use `/model` command to configure and manage multiple model profiles, set default models for different purposes
 - **User Control**: Users can specify specific models for task processing at any time
 
@@ -314,16 +583,15 @@ We specially designed the `AskExpertModel` tool:
 ```typescript
 // Example of multi-model configuration support
 {
-  "modelProfiles": {
-    "o3": { "provider": "openai", "model": "o3", "apiKey": "..." },
-    "claude4": { "provider": "anthropic", "model": "claude-sonnet-4", "apiKey": "..." },
-    "qwen": { "provider": "alibaba", "model": "qwen-coder", "apiKey": "..." }
-  },
+  "modelProfiles": [
+    { "name": "o3", "provider": "openai", "modelName": "o3", "apiKey": "...", "maxTokens": 1024, "contextLength": 128000, "isActive": true, "createdAt": 1710000000000 },
+    { "name": "qwen", "provider": "alibaba", "modelName": "qwen-coder", "apiKey": "...", "maxTokens": 1024, "contextLength": 128000, "isActive": true, "createdAt": 1710000000001 }
+  ],
   "modelPointers": {
-    "main": "claude4",      // Main conversation model
-    "task": "qwen",         // Task execution model
-    "reasoning": "o3",      // Reasoning model
-    "quick": "glm-4.5"      // Quick response model
+    "main": "o3",           // Main conversation model
+    "task": "qwen-coder",   // Sub-agent model
+    "compact": "o3",        // Context compression model
+    "quick": "o3"           // Quick operations model
   }
 }
 ```
@@ -346,12 +614,12 @@ We specially designed the `AskExpertModel` tool:
 4. **Flexible Switching**: Switch models based on task requirements without restarting sessions
 5. **Leveraging Strengths**: Combine advantages of different models for optimal overall results
 
-### 📊 Comparison with Official Implementation
+### 📊 Comparison (Single-model CLI)
 
-| Feature | Kode | Official Claude |
+| Feature | Kode | Single-model CLI |
 |---------|------|-----------------|
-| Number of Supported Models | Unlimited, configurable for any model | Only supports single Claude model |
-| Model Switching | ✅ Tab key quick switch | ❌ Requires session restart |
+| Number of Supported Models | Unlimited, configurable for any model | Only supports one model |
+| Model Switching | ✅ Option+M quick switch | ❌ Requires session restart |
 | Parallel Processing | ✅ Multiple SubAgents work in parallel | ❌ Single-threaded processing |
 | Cost Tracking | ✅ Separate statistics for multiple models | ❌ Single model cost |
 | Task Model Configuration | ✅ Different default models for different purposes | ❌ Same model for all tasks |
@@ -415,7 +683,7 @@ Apache 2.0 License - see [LICENSE](LICENSE) for details.
 
 - Some code from @dnakov's anonkode
 - Some UI learned from gemini-cli  
-- Some system design learned from claude code
+- Some system design learned from upstream agent CLIs
 
 ## Support
 

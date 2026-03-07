@@ -1,35 +1,29 @@
-// Model capability type definitions for unified API support
 export interface ModelCapabilities {
-  // API architecture type
   apiArchitecture: {
     primary: 'chat_completions' | 'responses_api'
-    fallback?: 'chat_completions'  // Responses API models can fallback
+    fallback?: 'chat_completions'
   }
-  
-  // Parameter mapping
+
   parameters: {
     maxTokensField: 'max_tokens' | 'max_completion_tokens' | 'max_output_tokens'
     supportsReasoningEffort: boolean
     supportsVerbosity: boolean
     temperatureMode: 'flexible' | 'fixed_one' | 'restricted'
   }
-  
-  // Tool calling capabilities
+
   toolCalling: {
     mode: 'none' | 'function_calling' | 'custom_tools'
     supportsFreeform: boolean
     supportsAllowedTools: boolean
     supportsParallelCalls: boolean
   }
-  
-  // State management
+
   stateManagement: {
     supportsResponseId: boolean
     supportsConversationChaining: boolean
     supportsPreviousResponseId: boolean
   }
-  
-  // Streaming support
+
   streaming: {
     supported: boolean
     includesUsage: boolean
@@ -42,7 +36,6 @@ export interface ReasoningConfig {
   summary: 'auto' | 'concise' | 'detailed' | 'none'
 }
 
-// Streaming context for reasoning state management
 export interface ReasoningStreamingContext {
   thinkOpen: boolean
   thinkClosed: boolean
@@ -52,7 +45,6 @@ export interface ReasoningStreamingContext {
   currentPartIndex?: number
 }
 
-// Unified request parameters
 export interface UnifiedRequestParams {
   messages: any[]
   systemPrompt: string[]
@@ -61,13 +53,13 @@ export interface UnifiedRequestParams {
   stream?: boolean
   previousResponseId?: string
   reasoningEffort?: 'minimal' | 'low' | 'medium' | 'high'
-  reasoning?: ReasoningConfig  // Full reasoning config
+  reasoning?: ReasoningConfig
   verbosity?: 'low' | 'medium' | 'high'
   temperature?: number
   allowedTools?: string[]
+  stopSequences?: string[]
 }
 
-// Unified response format
 export interface UnifiedResponse {
   id: string
   content: string | Array<{ type: string; text?: string; [key: string]: any }>
@@ -77,5 +69,5 @@ export interface UnifiedResponse {
     completionTokens: number
     reasoningTokens?: number
   }
-  responseId?: string  // For Responses API state management
+  responseId?: string
 }

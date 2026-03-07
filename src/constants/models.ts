@@ -278,7 +278,6 @@ export default {
       supports_system_messages: true,
       supports_tool_choice: true,
     },
-    // GPT-5 Models
     {
       model: 'gpt-5',
       max_tokens: 32768,
@@ -883,7 +882,7 @@ export const providers = {
     baseURL: 'https://api.moonshot.cn/v1',
   },
   anthropic: {
-    name: 'Claude',
+    name: 'Messages API (Native)',
     baseURL: 'https://api.anthropic.com',
   },
   burncloud: {
@@ -912,7 +911,7 @@ export const providers = {
   },
   'custom-openai': {
     name: 'Custom OpenAI-Compatible API',
-    baseURL: '', // Will be configured by user
+    baseURL: '',
   },
   openrouter: {
     name: 'OpenRouter',
@@ -956,6 +955,6 @@ export const providers = {
   },
   azure: {
     name: 'Azure OpenAI',
-    baseURL: '', // Will be dynamically constructed based on resource name
+    baseURL: '',
   },
 }

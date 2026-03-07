@@ -1,4 +1,4 @@
-#!/usr/bin/env node
+#!/usr/bin/env bun
 
 const fs = require('fs');
 const path = require('path');
@@ -6,7 +6,17 @@ const path = require('path');
 console.log('📦 Pre-publish checks...\n');
 
 // Check required files
-const requiredFiles = ['cli.js', 'package.json', 'yoga.wasm', '.npmrc'];
+const requiredFiles = [
+  'cli.js',
+  'cli-acp.js',
+  'package.json',
+  'yoga.wasm',
+  '.npmrc',
+  path.join('scripts', 'binary-utils.cjs'),
+  path.join('dist', 'index.js'),
+  path.join('dist', 'package.json'),
+  path.join('dist', 'yoga.wasm'),
+];
 const missingFiles = requiredFiles.filter(file => !fs.existsSync(file));
 
 if (missingFiles.length > 0) {
@@ -19,6 +29,13 @@ if (missingFiles.length > 0) {
 const cliStats = fs.statSync('cli.js');
 if (!(cliStats.mode & 0o100)) {
   console.error('❌ cli.js is not executable');
+  process.exit(1);
+}
+
+// Check cli-acp.js is executable
+const acpStats = fs.statSync('cli-acp.js');
+if (!(acpStats.mode & 0o100)) {
+  console.error('❌ cli-acp.js is not executable');
   process.exit(1);
 }
 

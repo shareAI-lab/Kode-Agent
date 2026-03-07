@@ -1,192 +1,136 @@
-#!/usr/bin/env node
-import { build } from 'esbuild'
-import { existsSync, mkdirSync, writeFileSync, cpSync, readFileSync, readdirSync, statSync, chmodSync } from 'node:fs'
+#!/usr/bin/env bun
+import {
+  chmodSync,
+  cpSync,
+  mkdirSync,
+  readFileSync,
+  rmSync,
+  writeFileSync,
+} from 'node:fs'
 import { join } from 'node:path'
+import { build as esbuildBuild } from 'esbuild'
 
-const SRC_DIR = 'src'
 const OUT_DIR = 'dist'
 
-function collectEntries(dir, acc = []) {
-  const items = readdirSync(dir)
-  for (const name of items) {
-    const p = join(dir, name)
-    const st = statSync(p)
-    if (st.isDirectory()) {
-      // skip tests and storybook or similar folders if any, adjust as needed
-      if (name === 'test' || name === '__tests__') continue
-      collectEntries(p, acc)
-    } else if (st.isFile()) {
-      if (p.endsWith('.ts') || p.endsWith('.tsx')) acc.push(p)
+function loadEsbuildTsconfigRaw() {
+  try {
+    const raw = JSON.parse(readFileSync('tsconfig.json', 'utf8'))
+    const compilerOptions = raw?.compilerOptions ?? {}
+    const paths = { ...(compilerOptions.paths ?? {}) }
+    // Prevent esbuild from rewriting all package imports via "*" -> node_modules/*.
+    delete paths['*']
+
+    return {
+      compilerOptions: {
+        ...compilerOptions,
+        paths,
+      },
     }
+  } catch {
+    return undefined
   }
-  return acc
 }
 
-function fixRelativeImports(dir) {
-  const items = readdirSync(dir)
-  for (const name of items) {
-    const p = join(dir, name)
-    const st = statSync(p)
-    if (st.isDirectory()) {
-      fixRelativeImports(p)
-      continue
-    }
-    if (!p.endsWith('.js')) continue
-    let text = readFileSync(p, 'utf8')
-    // Handle: from '...'
-    text = text.replace(/(from\s+['"])(\.{1,2}\/[^'"\n]+)(['"])/gm, (m, a, spec, c) => {
-      if (/\.(js|json|node|mjs|cjs)$/.test(spec)) return m
-      return a + spec + '.js' + c
+const ESBUILD_TSCONFIG_RAW = loadEsbuildTsconfigRaw()
+
+async function buildWithEsbuild(options) {
+  try {
+    await esbuildBuild({
+      entryPoints: options.entrypoints,
+      outdir: options.outdir,
+      bundle: true,
+      platform: 'node',
+      target: ['node20'],
+      format: 'esm',
+      splitting: true,
+      // Keep node_modules as runtime dependencies (avoid bundling optional deps like ink devtools).
+      packages: 'external',
+      sourcemap: 'external',
+      banner: {
+        // Allow CJS-style `require(...)` from ESM output (esbuild may emit dynamic requires
+        // for optional dependencies).
+        js: 'import { createRequire as __kodeCreateRequire } from "node:module";\nconst require = __kodeCreateRequire(import.meta.url);',
+      },
+      ...(ESBUILD_TSCONFIG_RAW ? { tsconfigRaw: ESBUILD_TSCONFIG_RAW } : {}),
     })
-    // Handle: export ... from '...'
-    text = text.replace(/(export\s+[^;]*?from\s+['"])(\.{1,2}\/[^'"\n]+)(['"])/gm, (m, a, spec, c) => {
-      if (/\.(js|json|node|mjs|cjs)$/.test(spec)) return m
-      return a + spec + '.js' + c
-    })
-    // Handle: dynamic import('...')
-    text = text.replace(/(import\(\s*['"])(\.{1,2}\/[^'"\n]+)(['"]\s*\))/gm, (m, a, spec, c) => {
-      if (/\.(js|json|node|mjs|cjs)$/.test(spec)) return m
-      return a + spec + '.js' + c
-    })
-    writeFileSync(p, text)
+  } catch (err) {
+    throw new Error(
+      `esbuild failed (${options.label}): ${err instanceof Error ? err.message : String(err)}`,
+    )
   }
 }
 
 async function main() {
-  console.log('🚀 Building Kode CLI for cross-platform compatibility...')
-  
-  if (!existsSync(OUT_DIR)) mkdirSync(OUT_DIR, { recursive: true })
+  console.log('🚀 Building Kode CLI (Bun dev + Node runtime)...')
 
-  const entries = collectEntries(SRC_DIR)
+  rmSync(OUT_DIR, { recursive: true, force: true })
+  mkdirSync(OUT_DIR, { recursive: true })
 
-  // Build ESM format but ensure Node.js compatibility
-  await build({
-    entryPoints: entries,
+  // Build the unified entry (src/entrypoints/index.ts -> dist/index.js)
+  // and its dynamic imports (cli/acp/mcp) as split chunks.
+  await buildWithEsbuild({
+    label: 'npm',
+    entrypoints: ['src/entrypoints/index.ts'],
     outdir: OUT_DIR,
-    outbase: SRC_DIR,
-    bundle: false,
-    platform: 'node',
-    format: 'esm',
-    target: ['node20'],
-    sourcemap: true,
-    legalComments: 'none',
-    logLevel: 'info',
-    tsconfig: 'tsconfig.json',
   })
 
-  // Fix relative import specifiers to include .js extension for ESM
-  fixRelativeImports(OUT_DIR)
+  // Mark dist as ESM for interoperability (some tooling still expects this)
+  writeFileSync(
+    join(OUT_DIR, 'package.json'),
+    JSON.stringify({ type: 'module', main: './index.js' }, null, 2),
+  )
 
-  // Mark dist as ES module
-  writeFileSync(join(OUT_DIR, 'package.json'), JSON.stringify({
-    type: 'module',
-    main: './entrypoints/cli.js'
-  }, null, 2))
-
-  // Create a proper entrypoint - ESM with async handling
-  const mainEntrypoint = join(OUT_DIR, 'index.js')
-  writeFileSync(mainEntrypoint, `#!/usr/bin/env node
-import('./entrypoints/cli.js').catch(err => {
-  console.error('❌ Failed to load CLI:', err.message);
-  process.exit(1);
-});
-`)
-
-  // Copy yoga.wasm alongside outputs
+  // Copy yoga.wasm alongside outputs (helps in environments where root assets are stripped)
   try {
     cpSync('yoga.wasm', join(OUT_DIR, 'yoga.wasm'))
-    console.log('✅ yoga.wasm copied to dist')
   } catch (err) {
-    console.warn('⚠️  Could not copy yoga.wasm:', err.message)
+    console.warn(
+      '⚠️  Could not copy yoga.wasm:',
+      err instanceof Error ? err.message : String(err),
+    )
   }
 
-  // Create cross-platform CLI wrapper
-  const cliWrapper = `#!/usr/bin/env node
+  // Copy vendor assets if present (ripgrep, future bundled tools)
+  // Note: vendor assets are intentionally not shipped in the npm package.
 
-// Cross-platform CLI wrapper for Kode
-// Prefers Bun but falls back to Node.js with tsx loader
-
-const { spawn } = require('child_process');
-const { existsSync } = require('fs');
-const path = require('path');
-
-// Get the directory where this CLI script is installed
-const kodeDir = __dirname;
-const distPath = path.join(kodeDir, 'dist', 'index.js');
-
-// Check if we have a built version
-if (!existsSync(distPath)) {
-  console.error('❌ Built files not found. Run "bun run build" first.');
-  process.exit(1);
-}
-
-// Try to use Bun first, then fallback to Node.js with tsx
-const runWithBun = () => {
-  const proc = spawn('bun', ['run', distPath, ...process.argv.slice(2)], {
-    stdio: 'inherit',
-    cwd: process.cwd()  // Use current working directory, not kode installation directory
-  });
-
-  proc.on('error', (err) => {
-    if (err.code === 'ENOENT') {
-      // Bun not found, try Node.js
-      runWithNode();
-    } else {
-      console.error('❌ Failed to start with Bun:', err.message);
-      process.exit(1);
-    }
-  });
-
-  proc.on('close', (code) => {
-    process.exit(code);
-  });
-};
-
-const runWithNode = () => {
-  const proc = spawn('node', [distPath, ...process.argv.slice(2)], {
-    stdio: 'inherit',
-    cwd: process.cwd()  // Use current working directory, not kode installation directory
-  });
-
-  proc.on('error', (err) => {
-    console.error('❌ Failed to start with Node.js:', err.message);
-    process.exit(1);
-  });
-
-  proc.on('close', (code) => {
-    process.exit(code);
-  });
-};
-
-// Start with Bun preference
-runWithBun();
-`;
-
-  writeFileSync('cli.js', cliWrapper);
-
-  // Make cli.js executable
+  // Generate Node-based CLI shim (npm bin points here)
+  // - Prefer cached native binary (Windows OOTB)
+  // - Fallback to Node.js runtime (npm users don't need Bun)
+  cpSync(join('scripts', 'cli-wrapper.cjs'), 'cli.js')
   try {
-    chmodSync('cli.js', 0o755);
-    console.log('✅ cli.js made executable');
+    chmodSync('cli.js', 0o755)
   } catch (err) {
-    console.warn('⚠️  Could not make cli.js executable:', err.message);
+    console.warn(
+      '⚠️  Could not make cli.js executable:',
+      err instanceof Error ? err.message : String(err),
+    )
   }
 
-  // Create .npmrc file
-  const npmrcContent = `# Kode npm configuration
+  // Generate Node-based ACP shim (npm bin points here)
+  cpSync(join('scripts', 'cli-acp-wrapper.cjs'), 'cli-acp.js')
+  try {
+    chmodSync('cli-acp.js', 0o755)
+  } catch (err) {
+    console.warn(
+      '⚠️  Could not make cli-acp.js executable:',
+      err instanceof Error ? err.message : String(err),
+    )
+  }
+
+  // Create .npmrc file (kept intentionally tiny)
+  writeFileSync(
+    '.npmrc',
+    `# Kode npm configuration
 package-lock=false
 save-exact=true
-`;
+`,
+  )
 
-  writeFileSync('.npmrc', npmrcContent);
-
-  console.log('✅ Build completed for cross-platform compatibility!')
-  console.log('📋 Generated files:')
-  console.log('  - dist/ (ESM modules)')
-  console.log('  - dist/index.js (main entrypoint)')
-  console.log('  - dist/entrypoints/cli.js (CLI main)')
-  console.log('  - cli.js (cross-platform wrapper)')
-  console.log('  - .npmrc (npm configuration)')
+  console.log('✅ Build completed')
+  console.log('📋 Outputs:')
+  console.log('  - dist/index.js')
+  console.log('  - cli.js')
+  console.log('  - cli-acp.js')
 }
 
 main().catch(err => {

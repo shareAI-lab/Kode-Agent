@@ -4,7 +4,6 @@ const BASE_CONFIG = {
   SCOPES: ['org:create_api_key', 'user:profile'] as const,
 }
 
-// Production OAuth configuration - Used in normal operation
 const PROD_OAUTH_CONFIG = {
   ...BASE_CONFIG,
   AUTHORIZE_URL: '',
@@ -14,5 +13,4 @@ const PROD_OAUTH_CONFIG = {
   CLIENT_ID: '',
 } as const
 
-// Default to prod config, override with test/staging if enabled
 export const OAUTH_CONFIG = PROD_OAUTH_CONFIG
