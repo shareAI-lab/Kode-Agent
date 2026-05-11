@@ -323,6 +323,38 @@ You can use the onboarding to set up the model, or `/model`.
 If you don't see the models you want on the list, you can manually set them in `/config`
 As long as you have an openai-like endpoint, it should work.
 
+### OpenRouter setup
+
+Kode includes OpenRouter as an OpenAI-compatible provider. Create an API key in [OpenRouter](https://openrouter.ai/settings/keys), then choose OpenRouter from `/model` and select or enter any OpenRouter model ID, for example:
+
+```bash
+export OPENROUTER_API_KEY=sk-or-v1-...
+```
+
+```yaml
+version: 1
+profiles:
+  - name: OpenRouter Claude Sonnet
+    provider: openrouter
+    modelName: anthropic/claude-sonnet-4.5
+    baseURL: https://openrouter.ai/api/v1
+    maxTokens: 8192
+    contextLength: 200000
+    apiKey:
+      fromEnv: OPENROUTER_API_KEY
+pointers:
+  main: anthropic/claude-sonnet-4.5
+  task: anthropic/claude-sonnet-4.5
+  compact: anthropic/claude-sonnet-4.5
+  quick: anthropic/claude-sonnet-4.5
+```
+
+Import the profile with:
+
+```bash
+kode models import kode-openrouter.yaml
+```
+
 ### Commands
 
 - `/help` - Show available commands
@@ -516,6 +548,8 @@ pointers:
   compact: gpt-4o
   quick: gpt-4o
 ```
+
+For OpenRouter, use `provider: openrouter`, `baseURL: https://openrouter.ai/api/v1`, and `apiKey.fromEnv: OPENROUTER_API_KEY`.
 
 #### 2. **TaskTool Intelligent Task Distribution**
 Our specially designed `TaskTool` (Architect tool) implements:

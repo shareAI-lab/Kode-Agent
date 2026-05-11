@@ -107,6 +107,7 @@ export type ProviderType =
   | 'opendev'
   | 'xai'
   | 'groq'
+  | 'openrouter'
   | 'gemini'
   | 'ollama'
   | 'azure'

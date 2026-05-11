@@ -227,6 +227,7 @@ kode config list -g
 ```bash
 # API Keys
 OPENAI_API_KEY=sk-...
+OPENROUTER_API_KEY=sk-or-v1-...
 
 # Model Selection
 CLAUDE_MODEL=claude-3-5-sonnet-20241022
@@ -360,6 +361,30 @@ Temporary for current session:
 ## Advanced Configuration
 
 ### Custom Model Providers
+
+#### OpenRouter
+
+OpenRouter is available as an OpenAI-compatible provider. Use the `/model` selector and choose OpenRouter, or import a model profile:
+
+```yaml
+version: 1
+profiles:
+  - name: OpenRouter Claude Sonnet
+    provider: openrouter
+    modelName: anthropic/claude-sonnet-4.5
+    baseURL: https://openrouter.ai/api/v1
+    maxTokens: 8192
+    contextLength: 200000
+    apiKey:
+      fromEnv: OPENROUTER_API_KEY
+pointers:
+  main: anthropic/claude-sonnet-4.5
+  task: anthropic/claude-sonnet-4.5
+  compact: anthropic/claude-sonnet-4.5
+  quick: anthropic/claude-sonnet-4.5
+```
+
+OpenRouter model IDs use the `provider/model` format shown in the [OpenRouter model list](https://openrouter.ai/models).
 
 ```json
 {

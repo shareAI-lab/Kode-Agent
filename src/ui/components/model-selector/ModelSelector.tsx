@@ -603,6 +603,7 @@ export function ModelSelector({
       'glm',
       'minimax',
       'baidu-qianfan',
+      'openrouter',
       'custom-openai',
     ].includes(selectedProvider)
 
@@ -938,6 +939,7 @@ export function ModelSelector({
         'mistral',
         'xai',
         'groq',
+        'openrouter',
         'custom-openai',
       ].includes(selectedProvider)
 

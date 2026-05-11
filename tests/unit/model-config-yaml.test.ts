@@ -48,6 +48,37 @@ describe('modelConfigYaml', () => {
     expect(yamlText).toContain('fromEnv')
   })
 
+  test('export uses OPENROUTER_API_KEY for OpenRouter profiles', () => {
+    const config: any = {
+      modelProfiles: [
+        {
+          name: 'OpenRouter Main',
+          provider: 'openrouter',
+          modelName: 'anthropic/claude-sonnet-4.5',
+          baseURL: 'https://openrouter.ai/api/v1',
+          apiKey: 'SECRET_KEY_SHOULD_NOT_APPEAR',
+          maxTokens: 8192,
+          contextLength: 200000,
+          isActive: true,
+          createdAt: 1,
+        },
+      ],
+      modelPointers: {
+        main: 'anthropic/claude-sonnet-4.5',
+        task: 'anthropic/claude-sonnet-4.5',
+        compact: 'anthropic/claude-sonnet-4.5',
+        quick: 'anthropic/claude-sonnet-4.5',
+      },
+    }
+
+    const yamlText = formatModelConfigYamlForSharing(config)
+
+    expect(yamlText).toContain('provider: openrouter')
+    expect(yamlText).toContain('baseURL: https://openrouter.ai/api/v1')
+    expect(yamlText).toContain('fromEnv: OPENROUTER_API_KEY')
+    expect(yamlText).not.toContain('SECRET_KEY_SHOULD_NOT_APPEAR')
+  })
+
   test('import resolves apiKey from env and applies pointers', () => {
     process.env.TEST_OPENAI_KEY = 'resolved-from-env'
 

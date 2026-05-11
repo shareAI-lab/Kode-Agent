@@ -95,22 +95,26 @@ export function validateAndRepairGPT5Profile(
     if (
       profile.provider !== 'openai' &&
       profile.provider !== 'custom-openai' &&
+      profile.provider !== 'openrouter' &&
       profile.provider !== 'azure'
     ) {
       debugLogger.warn('GPT5_CONFIG_UNEXPECTED_PROVIDER', {
         model: profile.modelName,
         provider: profile.provider,
-        expectedProviders: ['openai', 'custom-openai', 'azure'],
+        expectedProviders: ['openai', 'custom-openai', 'openrouter', 'azure'],
       })
     }
 
     if (profile.modelName.includes('gpt-5') && !profile.baseURL) {
-      repairedProfile.baseURL = 'https://api.openai.com/v1'
+      repairedProfile.baseURL =
+        profile.provider === 'openrouter'
+          ? 'https://openrouter.ai/api/v1'
+          : 'https://api.openai.com/v1'
       wasRepaired = true
       debugLogger.state('GPT5_CONFIG_AUTO_REPAIR', {
         model: profile.modelName,
         field: 'baseURL',
-        value: 'https://api.openai.com/v1',
+        value: repairedProfile.baseURL,
       })
     }
   }
@@ -210,4 +214,3 @@ export function createGPT5ModelProfile(
 
   return profile
 }
-

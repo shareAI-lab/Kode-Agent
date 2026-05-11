@@ -63,6 +63,8 @@ function suggestedApiKeyEnvForProvider(provider: string): string | undefined {
     case 'openai':
     case 'custom-openai':
       return 'OPENAI_API_KEY'
+    case 'openrouter':
+      return 'OPENROUTER_API_KEY'
     case 'azure':
       return 'AZURE_OPENAI_API_KEY'
     case 'gemini':

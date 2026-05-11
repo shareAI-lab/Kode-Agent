@@ -559,6 +559,7 @@ export async function getCompletionWithProfile(
         'mistral',
         'xai',
         'groq',
+        'openrouter',
         'custom-openai',
       ].includes(provider)
 
@@ -716,6 +717,7 @@ export async function getCompletionWithProfile(
       'mistral',
       'xai',
       'groq',
+      'openrouter',
       'custom-openai',
     ].includes(provider)
 
